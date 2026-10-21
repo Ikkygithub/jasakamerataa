@@ -1,5 +1,5 @@
 from motor.motor_asyncio import AsyncIOMotorClient
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, MultiFernet
 from dotenv import load_dotenv
 from pathlib import Path
 from datetime import datetime, timezone
@@ -9,7 +9,9 @@ load_dotenv(Path(__file__).parent / ".env")
 mongo_url = os.environ["MONGO_URL"]
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ["DB_NAME"]]
-cipher = Fernet(base64.urlsafe_b64encode(hashlib.sha256(mongo_url.encode()).digest()))
+_legacy = Fernet(base64.urlsafe_b64encode(hashlib.sha256(mongo_url.encode()).digest()))
+cipher = MultiFernet([Fernet(os.environ["ENCRYPTION_KEY"]), _legacy])
+ENC_VERSION = 2
 
 CATEGORIES = ["Wedding", "Commercial", "Event", "Graduation"]
 COMMISSION_RATE = 0.05

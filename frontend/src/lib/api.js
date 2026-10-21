@@ -7,11 +7,18 @@ export class ApiError extends Error {
   }
 }
 
+const TOKEN_KEY = "jk_session";
+export const setSessionToken = (t) => (t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY));
+const authHeader = () => {
+  const t = localStorage.getItem(TOKEN_KEY);
+  return t ? { Authorization: `Bearer ${t}` } : {};
+};
+
 async function request(method, path, body) {
   const res = await fetch(`${API}${path}`, {
     method,
     credentials: "include",
-    headers: body ? { "Content-Type": "application/json" } : {},
+    headers: { ...authHeader(), ...(body ? { "Content-Type": "application/json" } : {}) },
     body: body ? JSON.stringify(body) : undefined,
   });
   const data = await res.json().catch(() => ({}));
@@ -23,14 +30,14 @@ async function request(method, path, body) {
 }
 
 async function upload(path, form) {
-  const res = await fetch(`${API}${path}`, { method: "POST", credentials: "include", body: form });
+  const res = await fetch(`${API}${path}`, { method: "POST", credentials: "include", headers: authHeader(), body: form });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new ApiError(typeof data.detail === "string" ? data.detail : "Unggahan gagal", res.status);
   return data;
 }
 
 export async function downloadFile(path, filename) {
-  const res = await fetch(`${API}${path}`, { credentials: "include" });
+  const res = await fetch(`${API}${path}`, { credentials: "include", headers: authHeader() });
   if (!res.ok) throw new ApiError("File tidak dapat diunduh", res.status);
   const url = URL.createObjectURL(await res.blob());
   const a = document.createElement("a");

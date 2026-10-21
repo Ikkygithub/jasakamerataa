@@ -44,7 +44,8 @@ async def auth_session(payload: OAuthSession, response: Response):
     await db.user_sessions.delete_many({"user_id": user["user_id"]})
     await db.user_sessions.insert_one({"user_id": user["user_id"], "session_token": token, "expires_at": datetime.now(timezone.utc) + timedelta(days=7), "created_at": now()})
     response.set_cookie("session_token", token, httponly=True, secure=True, samesite="none", max_age=604800, path="/")
-    return public(user)
+    # Token juga dikembalikan untuk frontend beda domain (Hostinger) yang cookie pihak ketiganya diblokir.
+    return {**public(user), "session_token": token}
 
 
 async def current_user(request: Request):

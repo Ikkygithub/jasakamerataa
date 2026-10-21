@@ -1,6 +1,6 @@
 import os
 
-from core import CATEGORIES, db, new_id, now
+from core import CATEGORIES, ENC_VERSION, cipher, db, new_id, now
 from ledger import backfill
 
 IMAGES = [
@@ -56,3 +56,16 @@ async def seed_data():
         await db.users.update_many({"email": {"$in": admins}}, {"$set": {"role": "admin"}})
     await db.photographers.update_many({"verification": {"$exists": False}}, [{"$set": {"verification": {"status": {"$cond": ["$verified", "approved", "not_submitted"]}}}}])
     await backfill()
+    await rotate_encryption()
+
+
+async def rotate_encryption():
+    async for u in db.users.find({"enc_v": {"$ne": ENC_VERSION}, "$or": [{"bank.number_encrypted": {"$exists": True}}, {"bank_account_encrypted": {"$exists": True}}]}, {"user_id": 1, "bank": 1, "bank_account_encrypted": 1}):
+        sets = {"enc_v": ENC_VERSION}
+        if u.get("bank", {}).get("number_encrypted"):
+            sets["bank.number_encrypted"] = cipher.rotate(u["bank"]["number_encrypted"].encode()).decode()
+        if u.get("bank_account_encrypted"):
+            sets["bank_account_encrypted"] = cipher.rotate(u["bank_account_encrypted"].encode()).decode()
+        await db.users.update_one({"user_id": u["user_id"]}, {"$set": sets})
+    async for po in db.payouts.find({"enc_v": {"$ne": ENC_VERSION}, "bank_snapshot_encrypted": {"$exists": True}}, {"payout_id": 1, "bank_snapshot_encrypted": 1}):
+        await db.payouts.update_one({"payout_id": po["payout_id"]}, {"$set": {"enc_v": ENC_VERSION, "bank_snapshot_encrypted": cipher.rotate(po["bank_snapshot_encrypted"].encode()).decode()}})

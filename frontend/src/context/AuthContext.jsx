@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { api } from "@/lib/api";
+import { api, setSessionToken } from "@/lib/api";
 
 const AuthCtx = createContext(null);
 
@@ -28,6 +28,7 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     await api.post("/auth/logout").catch(() => {});
+    setSessionToken(null);
     setUser(null);
     setFavIds(new Set());
   };

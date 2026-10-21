@@ -89,3 +89,5 @@ android-sdk/
 credentials.json
 *.key
 .credentials
+deploy/mysql/data_export.sql
+deploy/hostinger/public_html/

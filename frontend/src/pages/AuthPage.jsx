@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { toast } from "sonner";
-import { api, dashboardPath } from "@/lib/api";
+import { api, dashboardPath, setSessionToken } from "@/lib/api";
 import { CATEGORIES } from "@/lib/data";
 import { useAuth } from "@/context/AuthContext";
 import { Header, Footer } from "@/components/layout/Header";
@@ -84,7 +84,8 @@ export function AuthCallback() {
     once.current = true;
     const id = new URLSearchParams(location.hash.slice(1)).get("session_id");
     api.post("/auth/session", { session_id: id })
-      .then(async () => {
+      .then(async (res) => {
+        setSessionToken(res.session_token);
         const u = await refresh();
         const toRegister = location.pathname === "/daftar" && (u?.role || "customer") === "customer";
         nav(toRegister ? "/daftar" : dashboardPath(u?.role), { replace: true });

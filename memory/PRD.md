@@ -99,3 +99,15 @@ Membangun ulang website Jasa Kamera sebagai marketplace jasa fotografi freelance
 - **PAYMENT DEFERRED/MOCKED**: belum ada gateway, QRIS, VA, webhook, refund sungguhan, atau payout sungguhan.
 - Positive Google OAuth membutuhkan session eksternal; negative/error handling sudah divalidasi.
 - Dashboard photographer dan admin masih menjadi backlog tahap berikutnya.
+## Update Juni 2026 — Persiapan migrasi Hostinger (tahap awal)
+- MySQL: schema.sql (26 tabel, + photographer_gallery & availability_note) dan export_mongo_to_mysql.py diuji impor ke MariaDB lokal: 0 error, 0 baris yatim; data asli = 4 user, 2 fotografer; email ganda/data uji dilaporkan DILEWATI; default komisi 5%.
+- Frontend: deploy/build_hostinger.sh → deploy/hostinger/jasakamerata_public_html.zip (+.htaccess SPA/HTTPS/www redirect, skrip platform dihapus). Paket saat ini memakai URL preview — perlu dibangun ulang dengan URL backend hasil deploy.
+- Auth: /api/auth/session kini juga mengembalikan session_token; frontend menyimpan di localStorage (jk_session) dan mengirim Bearer (untuk frontend beda domain). Diuji: masuk via token tanpa cookie + keluar menghapus token.
+- Express (deploy/node-api): tahap 1 katalog publik, 11/11 uji paritas vs FastAPI lulus.
+- Panduan: docs/DEPLOY_HOSTINGER.md (phpMyAdmin, public_html, Node.js, Google OAuth Client: origin https://jasakamerata.com, redirect https://jasakamerata.com/auth/google).
+- Regresi backend: 53 passed, 5 skipped.
+
+### Berikutnya
+- P0: User membuat Google OAuth Client → Express tahap 2 (login Google sendiri + sesi MySQL).
+- P0: Deploy backend Emergent, bangun ulang paket frontend dengan URL deploy, uji login Google nyata dari jasakamerata.com.
+- P1: Express tahap 3–6 (favorit/chat, booking, ledger/payout/admin, storage + Midtrans).
